@@ -64,20 +64,8 @@
 
   @media (max-width:760px){
     header{gap:14px;padding:0 14px}
-    #title,#fs{display:none!important}
+    #title,#fs,#prev,#next{display:none!important}
     #count{margin-left:auto}
-    /* Keep page-turn arrows available on touch screens when Flip mode is selected. */
-    body.flip #prev,body.flip #next{
-      display:flex!important;position:fixed;top:50%;bottom:auto;height:64px;width:42px;
-      transform:translateY(-50%);align-items:center;justify-content:center;
-      background:color-mix(in srgb,var(--bg) 78%,transparent);
-      backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-      border:1px solid color-mix(in srgb,var(--line) 75%,transparent);
-      border-radius:999px;z-index:8;opacity:.9;padding:0
-    }
-    body.flip #prev{left:6px}
-    body.flip #next{right:6px}
-    body.flip .arrow svg{width:19px;height:19px}
   }
 
   /* flip view (StPageFlip). #book fills the stage; the library fits the pages inside it at any aspect ratio. */
@@ -481,29 +469,6 @@ function flipFromArrow(direction){
 }
 $("#prev").onclick = function(){ flipFromArrow(-1); };
 $("#next").onclick = function(){ flipFromArrow(1); };
-
-// Mobile swipe navigation for Flip mode. A clear horizontal swipe turns one page/spread.
-(function(){
-  var stage = $("#stage"), touchStart = null;
-  stage.addEventListener("touchstart", function(e){
-    if (!document.body.classList.contains("flip") || e.touches.length !== 1) {
-      touchStart = null; return;
-    }
-    var t = e.touches[0];
-    touchStart = {x:t.clientX, y:t.clientY, time:Date.now()};
-  }, {passive:true});
-  stage.addEventListener("touchend", function(e){
-    if (!touchStart || !document.body.classList.contains("flip") || !e.changedTouches.length) return;
-    var t = e.changedTouches[0], dx = t.clientX - touchStart.x, dy = t.clientY - touchStart.y;
-    var elapsed = Date.now() - touchStart.time;
-    touchStart = null;
-    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.25 && elapsed < 900) {
-      e.preventDefault();
-      flipFromArrow(dx < 0 ? 1 : -1);
-    }
-  }, {passive:false});
-  stage.addEventListener("touchcancel", function(){ touchStart = null; }, {passive:true});
-})();
 $("#zoom").onclick = openZoom;
 bookEl.addEventListener("dblclick", openZoom);
 $("#fs").onclick = function(){
