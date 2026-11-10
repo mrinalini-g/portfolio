@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mrinalini Ganesh | Portfolio 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#f1f1ef; --ink:#111; --mute:#8c8c89; --line:#d9d8d4; --paper:#fff; --aspect:1; }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0e0e0e; --ink:#ededed; --mute:#777775; --line:#2e2e2d; }
+  }
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font:400 16px/1.4 "Hanken Grotesk",system-ui,sans-serif;
+    letter-spacing:.02em;-webkit-font-smoothing:antialiased}
+  body.flip{overflow:hidden}
+
+  header{position:fixed;inset:0 0 auto 0;height:52px;z-index:10;display:flex;align-items:center;gap:20px;
+    padding:0 20px;background:var(--bg);font-size:14px}
+  #title{flex:1;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #title b{font-weight:600}
+  #title span{color:var(--mute)}
+  .seg{display:flex;gap:16px}
+  button{font:inherit;letter-spacing:inherit;color:var(--mute);background:none;border:0;padding:6px 0;cursor:pointer;transition:color .15s,opacity .15s}
+  button:hover:not(:disabled),button[aria-pressed="true"]{color:var(--ink)}
+  button:disabled{opacity:.2;cursor:default}
+  button:focus-visible{outline:1px solid var(--ink);outline-offset:3px}
+  #zoom,#fs{line-height:0;padding:10px 4px}
+  #zoom svg,#fs svg{width:13px;height:13px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .flip-only{display:none}
+  body.flip .flip-only{display:inline-block}
+
+  #count{display:flex;align-items:baseline;gap:5px;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}
+  #pg{font:inherit;letter-spacing:inherit;font-variant-numeric:inherit;color:var(--ink);background:none;border:0;
+    border-bottom:1px solid transparent;border-radius:0;width:5.5ch;padding:0;text-align:right;transition:border-color .15s}
+  #pg:hover{border-bottom-color:var(--line)}
+  #pg:focus{outline:none;border-bottom-color:var(--ink)}
+  body.scroll #pg{display:none}
+
+  .arrow{display:none;position:fixed;top:52px;bottom:96px;width:56px;align-items:center;justify-content:center;z-index:5;padding:0}
+  body.flip .arrow{display:flex}
+  #prev{left:0} #next{right:0}
+  .arrow svg{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
+
+  @media (max-width:760px){
+    header{gap:14px;padding:0 14px}
+    #title,#fs,#prev,#next{display:none!important}
+    #count{margin-left:auto}
+  }
+
+  /* flip view (StPageFlip). #book fills the stage; the library fits the pages inside it at any aspect ratio. */
+  #stage{display:none;position:fixed;inset:52px 0 96px 0;overflow:hidden}
+  body.flip #stage{display:block}
+  #bookwrap{position:absolute;inset:16px 56px;opacity:0;transform:translateY(12px);transition:opacity .9s ease .15s,transform .9s ease .15s}
+  body.ready #bookwrap{opacity:1;transform:none}
+  @media (max-width:760px){#bookwrap{inset:12px 8px}}
+  #book{width:100%;height:100%;min-width:0!important;min-height:0!important;cursor:grab}
+  /* structural styles StPageFlip relies on (harmless if the library already injects them) */
+  .stf__parent{position:relative;display:block;box-sizing:border-box;transform:translateZ(0)}
+  .stf__wrapper{position:relative;width:100%;height:100%;box-sizing:border-box}
+  .stf__block{position:absolute;width:100%;height:100%;box-sizing:border-box;perspective:2000px}
+  .stf__item{position:absolute;display:none;transform-style:preserve-3d}
+  .page{background:var(--paper);overflow:hidden}
+  .page img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none;user-select:none}
+
+  #strip{display:none;position:fixed;inset:auto 0 0 0;height:96px;padding:0 20px;gap:12px;overflow-x:auto;
+    background:var(--bg);align-items:center;scrollbar-width:none}
+  #strip::-webkit-scrollbar{display:none}
+  body.flip #strip{display:flex}
+  .t{flex:none;display:flex;gap:1px;padding:0;opacity:.35;transition:opacity .15s,transform .2s ease}
+  .t:hover{opacity:.7;transform:scale(1.04)}
+  .t[aria-current="true"]{opacity:1}
+  .t img{height:56px;width:auto;aspect-ratio:var(--aspect);display:block;object-fit:cover}
+
+  /* mouse devices: the strip hides and slides up near the bottom edge, arrows show near the side edges */
+  #hint{display:none}
+  @media (hover:hover) and (pointer:fine){
+    #stage{bottom:28px}
+    .arrow{bottom:28px}
+    .arrow,.arrow:disabled{opacity:0;transition:opacity .25s ease}
+    .arrow:hover:not(:disabled),.arrow:focus-visible{opacity:1}
+    #strip{transform:translateY(100%);transition:transform .35s ease}
+    #strip.show,#strip:focus-within{transform:none}
+    body.flip #hint{display:block;position:fixed;left:50%;bottom:11px;width:40px;height:2px;margin-left:-20px;
+      background:var(--line);border-radius:2px;pointer-events:none;transition:opacity .25s}
+    #strip.show + #hint{opacity:0}
+  }
+
+  #scroll{display:none;max-width:1400px;margin:0 auto;padding:84px 24px 80px}
+  body.scroll #scroll{display:block}
+  #scroll .row{display:flex;justify-content:center;margin:0 0 24px}
+  #scroll .row img{display:block;width:50%;height:auto;aspect-ratio:var(--aspect);background:var(--paper)}
+  @media (max-width:600px){#scroll{padding:64px 0 40px}#scroll .row{margin-bottom:8px}}
+
+  #lb{display:none;position:fixed;inset:0;z-index:20;background:var(--bg);overflow:hidden;touch-action:none;
+    cursor:grab;user-select:none;-webkit-user-select:none}
+  #lb.on{display:block}
+  #lb.drag{cursor:grabbing}
+  #lb .in{position:absolute;left:0;top:0;display:flex;transform-origin:0 0}
+  #lb .in.anim{transition:transform .25s ease}
+  #lb img{display:block;flex:none;background:var(--paper);pointer-events:none;-webkit-user-drag:none}
+  #lbtools{position:fixed;top:0;right:0;z-index:1;display:flex;gap:2px;padding:8px 12px}
+  #lbtools button{width:36px;height:36px;display:flex;align-items:center;justify-content:center;padding:0;line-height:0}
+  #lbtools svg{width:17px;height:17px;display:block;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round}
+
+  #loader{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:18px;transition:opacity .7s ease,visibility 0s .7s}
+  #loader.done{opacity:0;visibility:hidden;pointer-events:none}
+  #loader .l-title{font-size:16px;letter-spacing:.14em;color:var(--ink)}
+  #loader .l-bar{width:120px;height:1px;background:var(--line);overflow:hidden}
+  #loader .l-bar i{display:block;height:100%;background:var(--ink);transform:scaleX(0);transform-origin:left center}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body class="flip">
+<div id="loader" role="status" aria-label="Loading"><div class="l-title">Selected Works</div><div class="l-bar"><i></i></div></div>
+<script>setTimeout(function(){var l=document.getElementById("loader");if(l)l.className+=" done";document.body.className+=" ready"},12000)</script>
+<header>
+  <div id="title">Mrinalini Ganesh | Portfolio 2026</div>
+  <button id="zoom" class="flip-only" aria-label="Zoom in on the current pages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></button>
+  <div id="count"><input id="pg" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Go to page"><span id="of"></span></div>
+  <div class="seg" role="group" aria-label="View mode">
+    <button id="m-flip" aria-pressed="true">Flip</button>
+    <button id="m-scroll" aria-pressed="false">Scroll</button>
+  </div>
+  <button id="fs" aria-label="Fullscreen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+</header>
+<button id="prev" class="arrow" aria-label="Previous page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5l-7 7 7 7"/></svg></button>
+<button id="next" class="arrow" aria-label="Next page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5l7 7-7 7"/></svg></button>
+
+<div id="stage"><div id="bookwrap"><div id="book"></div></div></div>
+<div id="strip" role="list" aria-label="Pages"></div><div id="hint"></div>
+<div id="scroll"></div>
+<div id="lb" role="dialog" aria-modal="true" aria-label="Zoomed pages">
+  <div class="in"></div>
+  <div id="lbtools">
+    <button id="zout" aria-label="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+    <button id="zin" aria-label="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button id="lbclose" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+<script>
+// ---- Settings ----
+var TITLE = "Mrinalini Ganesh | Portfolio 2026";   // shown in the top bar
+var TOTAL = 38;            // number of pages (1.webp ... N.webp)
+var DIR = "pages/";        // folder holding the images; use "" if they sit beside index.html
+// The aspect ratio is read automatically from 1-m.webp (A4, A3, 16:9, square, anything).
+// Three sizes per page: N-thumb.webp (strip), N-m.webp (flipping), N.webp (zoom)
+// ------------------
+
+var large = function(n){ return DIR + n + ".webp"; };
+var med   = function(n){ return DIR + n + "-m.webp"; };
+var thumb = function(n){ return DIR + n + "-thumb.webp"; };
+var $ = function(s){ return document.querySelector(s); };
+var bookEl = $("#book");
+var ASPECT = 1, pf = null, imgs = {}, pages = [];
+document.title = TITLE;
+(function(){   // name in heavier weight, anything after " | " muted
+  var parts = TITLE.split(" | "), t = $("#title");
+  t.textContent = "";
+  var b = document.createElement("b"); b.textContent = parts[0]; t.appendChild(b);
+  if (parts.length > 1) { var s = document.createElement("span"); s.textContent = " | " + parts.slice(1).join(" | "); t.appendChild(s); }
+})();
+
+// spreads (1-based): cover alone, then pairs, last page alone if the count is even
+var SP = [[1]];
+for (var i = 2; i <= TOTAL; i += 2) SP.push(i + 1 <= TOTAL ? [i, i + 1] : [i]);
+function spreadOf(p){ for (var k = 0; k < SP.length; k++) if (SP[k].indexOf(p) > -1) return k; return 0; }
+
+// read the page shape from the first image, then build everything
+var probe = new Image();
+probe.onload = probe.onerror = function(){
+  if (probe.naturalWidth) ASPECT = probe.naturalWidth / probe.naturalHeight;
+  start();
+};
+probe.src = med(1);
+
+function load(n){ var im = imgs[n]; if (im && !im.getAttribute("src")) im.src = med(n); }
+function loadAround(p){ for (var k = p - 3; k <= p + 5; k++) load(k); }
+
+// pages (1-based) currently on screen
+function view(){
+  var p = pf.getCurrentPageIndex() + 1;
+  return pf.getOrientation() === "portrait" ? [p] : SP[spreadOf(p)];
+}
+function updateUI(){
+  var v = view();
+  $("#pg").value = v.length === 1 ? v[0] : v[0] + "–" + v[1];
+  $("#of").textContent = "/ " + TOTAL;
+  $("#prev").disabled = v.indexOf(1) > -1;
+  $("#next").disabled = v.indexOf(TOTAL) > -1;
+  var cur = spreadOf(v[0]);
+  Array.prototype.forEach.call($("#strip").children, function(b, k){
+    b.setAttribute("aria-current", k === cur);
+    if (k === cur && b.scrollIntoView) b.scrollIntoView({inline: "center", block: "nearest"});
+  });
+}
+function refresh(){ loadAround(view()[0]); updateUI(); }
+function goTo(p){
+  pf.turnToPage(Math.max(1, Math.min(TOTAL, p)) - 1);   // instant jump
+  refresh();
+}
+
+function start(){
+  document.documentElement.style.setProperty("--aspect", ASPECT);
+  for (var n = 1; n <= TOTAL; n++) {
+    var el = document.createElement("div");
+    el.className = "page";
+    el.innerHTML = '<img alt="Page ' + n + '" draggable="false">';
+    imgs[n] = el.firstChild; pages.push(el); bookEl.appendChild(el);
+  }
+  pf = new St.PageFlip(bookEl, {
+    width: 1000, height: Math.round(1000 / ASPECT),   // only the page ratio matters in stretch mode
+    size: "stretch", minWidth: 320, maxWidth: 4000, minHeight: 100, maxHeight: 4000,
+    autoSize: false,                // #book is sized by the CSS above
+    showCover: true, usePortrait: false,  // always show spreads, even on small screens
+    showPageCorners: true,          // hover fold on the corners
+    useMouseEvents: true, mobileScrollSupport: false, swipeDistance: 20,
+    disableFlipByClick: true,       // flip by corner click / drag / arrows only (double-click opens zoom)
+    drawShadow: false, maxShadowOpacity: 0,
+    flippingTime: 900, startPage: 0
+  });
+  pf.on("init", refresh); pf.on("flip", refresh); pf.on("changeOrientation", refresh);
+  pf.loadFromHTML(pages);
+  loadAround(1); buildStrip(); buildScroll(); runLoader();
+  setMode(new URLSearchParams(location.search).get("view") === "scroll" ? "scroll" : "flip");
+  setTimeout(refresh, 60);
+}
+
+function buildStrip(){
+  SP.forEach(function(s){
+    var b = document.createElement("button");
+    b.className = "t"; b.setAttribute("role", "listitem");
+    b.setAttribute("aria-label", "Pages " + (s.length === 1 ? s[0] : s[0] + " to " + s[1]));
+    s.forEach(function(p){ var im = new Image(); im.alt = ""; im.loading = "lazy"; im.src = thumb(p); b.appendChild(im); });
+    b.onclick = function(){
+      goTo(s[0]);
+      this.blur();
+      $("#strip").classList.remove("show");
+    };
+    $("#strip").appendChild(b);
+  });
+}
+function buildScroll(){
+  SP.forEach(function(s){
+    var row = document.createElement("div"); row.className = "row";
+    s.forEach(function(p){ var im = new Image(); im.loading = "lazy"; im.alt = "Page " + p; im.src = med(p); row.appendChild(im); });
+    $("#scroll").appendChild(row);
+  });
+}
+
+// ----- loading state: waits for the cover and the spread after it, then fades out -----
+function runLoader(){
+  var need = [1, 2, 3].filter(function(n){ return n <= TOTAL; });
+  var done = 0, shown = 0, t0 = Date.now(), bar = $("#loader i"), loader = $("#loader");
+  need.forEach(function(n){
+    var im = imgs[n];
+    if (im.complete && im.naturalWidth) done++;
+    else { im.addEventListener("load", function(){ done++; }); im.addEventListener("error", function(){ done++; }); }
+  });
+  (function frame(){
+    var real = need.length ? done / need.length : 1;
+    var target = real >= 1 ? 1 : Math.min(0.9, real * 0.8 + Math.min(0.2, (Date.now() - t0) / 8000));
+    shown += (target - shown) * (real >= 1 ? 0.06 : 0.12);   // slower, deliberate final fill
+    bar.style.transform = "scaleX(" + shown + ")";
+    if (real >= 1 && shown > 0.99 && Date.now() - t0 > 700) {
+      bar.style.transform = "scaleX(1)";
+      setTimeout(function(){ loader.classList.add("done"); document.body.classList.add("ready"); }, 220);   // hold the full bar a beat, then fade the loader and the book in
+      return;
+    }
+    requestAnimationFrame(frame);
+  })();
+}
+
+function setMode(mode){
+  document.body.classList.toggle("flip", mode === "flip");
+  document.body.classList.toggle("scroll", mode === "scroll");
+  $("#m-flip").setAttribute("aria-pressed", mode === "flip");
+  $("#m-scroll").setAttribute("aria-pressed", mode === "scroll");
+  var u = new URL(location); u.searchParams.set("view", mode); history.replaceState(null, "", u);
+  if (mode === "flip") { pf.update(); refresh(); }
+  else { window.scrollTo(0, 0); $("#of").textContent = TOTAL + " pages"; }
+}
+
+// ----- zoom: fitted to the screen, wheel / pinch to zoom, drag to pan -----
+var lb = $("#lb"), inn = $("#lb .in");
+var z = {s: 1, x: 0, y: 0}, fit = {w: 0, h: 0, n: 1}, ptrs = {}, gest = null, lastTap = null, lastFocus = null;
+
+function maxScale(){
+  var im = inn.children[0], nat = (im && im.naturalWidth) || 2000, pw = fit.w / fit.n;
+  return Math.min(10, Math.max(2.5, nat / (pw * (window.devicePixelRatio || 1)) * 1.5));
+}
+function layout(){
+  var vw = window.innerWidth, vh = window.innerHeight, n = fit.n, pad = vw < 600 ? 12 : 40;
+  var ph = Math.min(vh - pad * 2, (vw - pad * 2) / (n * ASPECT)), pw = ph * ASPECT;
+  fit.w = pw * n; fit.h = ph;
+  Array.prototype.forEach.call(inn.children, function(c){ c.style.width = pw + "px"; c.style.height = ph + "px"; });
+  inn.style.width = fit.w + "px"; inn.style.height = fit.h + "px";
+}
+function apply(anim){
+  var vw = window.innerWidth, vh = window.innerHeight, cw = fit.w * z.s, ch = fit.h * z.s;
+  z.x = cw <= vw ? (vw - cw) / 2 : Math.min(0, Math.max(vw - cw, z.x));
+  z.y = ch <= vh ? (vh - ch) / 2 : Math.min(0, Math.max(vh - ch, z.y));
+  inn.classList.toggle("anim", !!anim);
+  inn.style.transform = "translate(" + z.x + "px," + z.y + "px) scale(" + z.s + ")";
+}
+function zoomTo(s, cx, cy, anim){
+  s = Math.min(maxScale(), Math.max(1, s));
+  var k = s / z.s;
+  z.x = cx - (cx - z.x) * k; z.y = cy - (cy - z.y) * k; z.s = s;
+  apply(anim);
+}
+function centre(){ return [window.innerWidth / 2, window.innerHeight / 2]; }
+
+function openZoom(){
+  var v = view();
+  fit.n = v.length; lastFocus = document.activeElement; inn.innerHTML = "";
+  v.forEach(function(p){
+    var im = new Image(), big = new Image();
+    im.alt = "Page " + p; im.draggable = false; im.src = med(p);
+    var swap = function(){ im.src = big.src; };
+    big.onload = function(){ if (big.decode) big.decode().then(swap, swap); else swap(); };
+    big.src = large(p);
+    inn.appendChild(im);
+  });
+  lb.classList.add("on");
+  layout(); z.s = 1; apply();
+  $("#lbclose").focus();
+}
+function closeZoom(){
+  if (!lb.classList.contains("on")) return;
+  lb.classList.remove("on", "drag"); inn.innerHTML = ""; ptrs = {}; gest = null;
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+}
+
+function startGesture(){
+  var ids = Object.keys(ptrs);
+  if (ids.length === 1) {
+    var p = ptrs[ids[0]];
+    gest = {mode: "pan", px: p.x, py: p.y, x: z.x, y: z.y};
+  } else if (ids.length >= 2) {
+    var a = ptrs[ids[0]], b = ptrs[ids[1]];
+    gest = {mode: "pinch", d: Math.hypot(a.x - b.x, a.y - b.y) || 1, s: z.s, x: z.x, y: z.y, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2};
+  } else gest = null;
+}
+function onTap(e){
+  var now = Date.now();
+  if (lastTap && now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
+    lastTap = null;
+    zoomTo(z.s > 1.05 ? 1 : Math.min(maxScale(), 2.5), e.clientX, e.clientY, true);
+    return;
+  }
+  lastTap = {t: now, x: e.clientX, y: e.clientY};
+  var inside = e.clientX >= z.x && e.clientX <= z.x + fit.w * z.s && e.clientY >= z.y && e.clientY <= z.y + fit.h * z.s;
+  if (!inside) closeZoom();
+}
+lb.addEventListener("pointerdown", function(e){
+  if (e.target.closest("#lbtools")) return;
+  lb.setPointerCapture(e.pointerId);
+  ptrs[e.pointerId] = {x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t: Date.now()};
+  inn.classList.remove("anim"); lb.classList.add("drag");
+  startGesture();
+});
+lb.addEventListener("pointermove", function(e){
+  var p = ptrs[e.pointerId];
+  if (!p || !gest) return;
+  p.x = e.clientX; p.y = e.clientY;
+  if (gest.mode === "pan") { z.x = gest.x + (p.x - gest.px); z.y = gest.y + (p.y - gest.py); }
+  else {
+    var ids = Object.keys(ptrs), a = ptrs[ids[0]], b = ptrs[ids[1]];
+    var d = Math.hypot(a.x - b.x, a.y - b.y) || 1, mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    var s = Math.min(maxScale(), Math.max(1, gest.s * d / gest.d));
+    var cx = (gest.mx - gest.x) / gest.s, cy = (gest.my - gest.y) / gest.s;
+    z.s = s; z.x = mx - cx * s; z.y = my - cy * s;
+  }
+  apply();
+});
+function endPointer(e){
+  var p = ptrs[e.pointerId];
+  if (!p) return;
+  delete ptrs[e.pointerId];
+  var tap = e.type === "pointerup" && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < 6 && Date.now() - p.t < 300;
+  if (!Object.keys(ptrs).length) lb.classList.remove("drag");
+  startGesture();
+  if (tap && !Object.keys(ptrs).length) onTap(e);
+}
+lb.addEventListener("pointerup", endPointer);
+lb.addEventListener("pointercancel", endPointer);
+lb.addEventListener("wheel", function(e){
+  e.preventDefault();
+  var d = e.deltaY * (e.deltaMode === 1 ? 16 : 1);
+  zoomTo(z.s * Math.exp(-d * (e.ctrlKey ? 0.01 : 0.002)), e.clientX, e.clientY);
+}, {passive: false});
+
+$("#zin").onclick  = function(){ var c = centre(); zoomTo(z.s * 1.5, c[0], c[1], true); };
+$("#zout").onclick = function(){ var c = centre(); zoomTo(z.s / 1.5, c[0], c[1], true); };
+$("#lbclose").onclick = closeZoom;
+
+// type a page number in the indicator and press Enter to jump
+var pg = $("#pg");
+pg.addEventListener("focus", function(){ setTimeout(function(){ pg.select(); }, 0); });
+pg.addEventListener("keydown", function(e){
+  if (e.keyCode === 13) { var n = parseInt(pg.value, 10); if (n >= 1) goTo(n); pg.blur(); }
+  else if (e.keyCode === 27) pg.blur();
+});
+pg.addEventListener("blur", function(){ if (pf) updateUI(); });
+
+if (matchMedia("(hover:hover) and (pointer:fine)").matches) {
+  var stripEl = $("#strip");
+  window.addEventListener("pointermove", function(e){
+    if (!document.body.classList.contains("flip")) return;
+    var zone = stripEl.classList.contains("show") ? 100 : 30;   // narrow trigger below the book, wider to stay open
+    stripEl.classList.toggle("show", e.clientY > window.innerHeight - zone);
+  }, {passive: true});
+  document.documentElement.addEventListener("mouseleave", function(){ stripEl.classList.remove("show"); });
+}
+$("#m-flip").onclick = function(){ setMode("flip"); };
+$("#m-scroll").onclick = function(){ setMode("scroll"); };
+// The library's flipPrev() starts at x=10 relative to the viewport,
+// which falls outside this centered book. Start from the book's actual
+// left edge instead; this keeps the normal animated flip and click lock.
+function flipFromArrow(direction){
+  if (!pf) return;
+  if (direction < 0) {
+    var rect = pf.getBoundsRect();
+    pf.getFlipController().flip({x: rect.left + 10, y: rect.height - 2});
+  } else {
+    pf.flipNext("bottom");
+  }
+}
+$("#prev").onclick = function(){ flipFromArrow(-1); };
+$("#next").onclick = function(){ flipFromArrow(1); };
+$("#zoom").onclick = openZoom;
+bookEl.addEventListener("dblclick", openZoom);
+$("#fs").onclick = function(){
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen();
+};
+function onResize(){
+  if (pf && document.body.classList.contains("flip")) { pf.update(); }
+  if (lb.classList.contains("on")) { layout(); z.s = 1; apply(); }
+}
+window.addEventListener("resize", onResize);
+window.addEventListener("orientationchange", onResize);
+window.addEventListener("keydown", function(e){
+  if (lb.classList.contains("on")) {
+    var k = e.keyCode, c = centre();
+    if (k === 27) closeZoom();
+    else if (k === 187 || k === 107 || k === 61) zoomTo(z.s * 1.5, c[0], c[1], true);
+    else if (k === 189 || k === 109 || k === 173) zoomTo(z.s / 1.5, c[0], c[1], true);
+    else if (k === 48 || k === 96) zoomTo(1, c[0], c[1], true);
+    else if (k >= 37 && k <= 40) {
+      z.x += k === 37 ? 80 : k === 39 ? -80 : 0; z.y += k === 38 ? 80 : k === 40 ? -80 : 0;
+      apply(true); e.preventDefault();
+    } else if (k === 9) {
+      var bs = Array.prototype.slice.call(document.querySelectorAll("#lbtools button")), i = bs.indexOf(document.activeElement);
+      bs[(i + (e.shiftKey ? -1 : 1) + bs.length) % bs.length].focus(); e.preventDefault();
+    }
+    return;
+  }
+  if (e.target.tagName === "INPUT" || !pf || !document.body.classList.contains("flip")) return;
+  if (e.keyCode === 37) { flipFromArrow(-1); e.preventDefault(); }
+  if (e.keyCode === 39) { pf.flipNext("bottom"); e.preventDefault(); }
+});
+</script>
+</body>
+</html>
