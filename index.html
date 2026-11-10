@@ -4,6 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mrinalini Ganesh | Portfolio 2026</title>
+
+<!-- OPEN GRAPH LINK PREVIEW -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mrinalini Ganesh Portfolio">
+<meta property="og:title" content="Mrinalini Ganesh | Selected Works 2026">
+<meta property="og:description" content="A collection of architectural works, explorations and visual studies by Mrinalini Ganesh.">
+<meta property="og:url" content="https://mrinalini-g.github.io/portfolio/">
+<meta property="og:image" content="https://mrinalini-g.github.io/portfolio/cover-01.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mrinalini Ganesh — Selected Works 2026">
+
+<!-- TWITTER / X LINK PREVIEW -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mrinalini Ganesh | Selected Works 2026">
+<meta name="twitter:description" content="Architectural works, explorations and visual studies.">
+<meta name="twitter:image" content="https://mrinalini-g.github.io/portfolio/cover-01.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
@@ -67,13 +84,25 @@
   .page img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none;user-select:none}
 
   #strip{display:none;position:fixed;inset:auto 0 0 0;height:96px;padding:0 20px;gap:12px;overflow-x:auto;
-    background:var(--bg);align-items:center;scrollbar-width:none}
+    background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(18px) saturate(1.35);
+    -webkit-backdrop-filter:blur(18px) saturate(1.35);align-items:center;scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;scroll-behavior:smooth;scroll-snap-type:x proximity;
+    border-top:1px solid color-mix(in srgb,var(--line) 65%,transparent)}
   #strip::-webkit-scrollbar{display:none}
   body.flip #strip{display:flex}
-  .t{flex:none;display:flex;gap:1px;padding:0;opacity:.35;transition:opacity .15s,transform .2s ease}
-  .t:hover{opacity:.7;transform:scale(1.04)}
-  .t[aria-current="true"]{opacity:1}
-  .t img{height:56px;width:auto;aspect-ratio:var(--aspect);display:block;object-fit:cover}
+  .t{flex:none;display:flex;gap:1px;padding:0;opacity:.42;transform:scale(.94);
+    transition:opacity .35s cubic-bezier(.2,.8,.2,1),transform .45s cubic-bezier(.2,.8,.2,1),filter .35s ease;
+    scroll-snap-align:center;filter:saturate(.82);will-change:transform,opacity}
+  .t:hover{opacity:.78;transform:translateY(-2px) scale(1.01);filter:saturate(1)}
+  .t[aria-current="true"]{opacity:1;transform:translateY(-3px) scale(1.06);filter:saturate(1);
+    z-index:1}
+  .t:focus-visible{outline:1px solid var(--ink);outline-offset:4px;border-radius:4px}
+  .t img{height:56px;width:auto;aspect-ratio:var(--aspect);display:block;object-fit:cover;
+    border-radius:3px;transition:box-shadow .35s ease,filter .35s ease}
+  .t[aria-current="true"] img{box-shadow:0 5px 16px rgba(0,0,0,.16)}
+  @media (prefers-reduced-motion:reduce){
+    #strip,.t,.t img{scroll-behavior:auto!important;transition:none!important}
+  }
 
   /* mouse devices: the strip hides and slides up near the bottom edge, arrows show near the side edges */
   #hint{display:none}
@@ -197,7 +226,7 @@ function updateUI(){
   var cur = spreadOf(v[0]);
   Array.prototype.forEach.call($("#strip").children, function(b, k){
     b.setAttribute("aria-current", k === cur);
-    if (k === cur && b.scrollIntoView) b.scrollIntoView({inline: "center", block: "nearest"});
+    if (k === cur && b.scrollIntoView) b.scrollIntoView({behavior: "smooth", inline: "center", block: "nearest"});
   });
 }
 function refresh(){ loadAround(view()[0]); updateUI(); }
@@ -228,7 +257,12 @@ function start(){
   pf.on("init", refresh); pf.on("flip", refresh); pf.on("changeOrientation", refresh);
   pf.loadFromHTML(pages);
   loadAround(1); buildStrip(); buildScroll(); runLoader();
-  setMode(new URLSearchParams(location.search).get("view") === "scroll" ? "scroll" : "flip");
+  // Respect an explicit ?view= choice; otherwise use scroll view on phones and flip view on larger screens.
+  var requestedView = new URLSearchParams(location.search).get("view");
+  var isPhone = window.matchMedia("(max-width: 760px)").matches;
+  setMode(requestedView === "scroll" ? "scroll" :
+          requestedView === "flip" ? "flip" :
+          isPhone ? "scroll" : "flip");
   setTimeout(refresh, 60);
 }
 
